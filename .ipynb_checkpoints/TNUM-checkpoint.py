@@ -8,10 +8,11 @@ import datetime
 
 class Tn(object):
     
-    def __init__(self, subject="something", property="some-property",
+    def __init__(self, tn = {}, subject="something", property="some-property",
                          value=None, error=None, unit=None, tags=None, stmt = "",
                          date=None, guid=None):
 
+        self.tn = tn
         self.subject = subject
         self.property = property
         self.value = value
@@ -39,24 +40,6 @@ class Tnum(object):
     endpoint = ""
     result_cache = ""
     
-    def __init__(self, subject="something", property="some-property",
-                         value=None, error=None, unit=None, tags=None, stmt = "",
-                         date=None, guid=None):
-
-        self.subject = subject
-        self.property = property
-        self.value = value
-        self.error = error
-        self.unit = unit
-        self.tags = tags
-        self.stmt = stmt
-
-        self.guid = guid
-        if date is not None:
-            self.date = date
-        else:
-            self.date = datetime.now()
-
     def dump(obj):
           for attr in dir(obj):
             if not attr.startswith("__"):
@@ -181,7 +164,7 @@ class Tnum(object):
             tol = None
             uns = None
 
-        return Tn(subj, prop, Nval, tol, uns, taglist, stmt, dat, gid)  # return object
+        return Tn(tn, subj, prop, Nval, tol, uns, taglist, stmt, dat, gid)  # return object
 
 
     @staticmethod
