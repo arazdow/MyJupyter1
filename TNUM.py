@@ -19,7 +19,7 @@ class Tn(object):
         self.error = error
         self.unit = unit
         self.tags = tags
-        self.stmt = stmt
+        self.statement = stmt
 
         self.guid = guid
         if date is not None:
@@ -40,11 +40,6 @@ class Tnum(object):
     endpoint = ""
     result_cache = ""
     
-    def dump(obj):
-          for attr in dir(obj):
-            if not attr.startswith("__"):
-                print("obj.%s = %r" % (attr, getattr(obj, attr))) 
-
     @staticmethod
     def authorize(ip="dev.truenumbers.com"):
         ip1 = ip
