@@ -9,24 +9,37 @@ import re
 
 class Tn(object):
     
-    def __init__(self, tn = {}, subject="something", property="some-property",
-                         value=None, error=None, unit=None, tags=None, stmt = "",
+    def __init__(self, tn = None, subject=None, property=None,
+                         value=None, error=None, unit=None, tags=None, stmt = None,
                          date=None, guid=None):
-
-        self.tn = tn
-        self.subject = subject
-        self.property = property
-        self.value = value
-        self.error = error
-        self.unit = unit
-        self.tags = tags
-        self.statement = stmt
-
-        self.guid = guid
-        if date is not None:
-            self.date = date
+        
+        if(subject == None && tn != None):
+            self.nuTn = Tnum.decodeNumber(tn)
+            self.tn = nuTn.tn
+            self.subject = nuTn.subject
+            self.property = nuTn.property
+            self.value = nuTn.value
+            self.error = nuTn.error
+            self.unit = nuTn.unit
+            self.tags = nuTn.tags
+            self.statement = nuTn.stmt
+            self.guid = nuTn.guid
+            self.date = nuTn.date
         else:
-            self.date = datetime.now()
+            self.tn = {}
+            self.subject = subject
+            self.property = property
+            self.value = value
+            self.error = error
+            self.unit = unit
+            self.tags = tags
+            self.statement = stmt
+
+            self.guid = guid
+            if date is not None:
+                self.date = date
+            else:
+                self.date = datetime.now()
 
     def dump(obj):
           for attr in dir(obj):
@@ -42,14 +55,12 @@ class Tnum(object):
     result_cache = ""
     
     @staticmethod
-    def authorize(ip="dev.truenumbers.com"):
-        ip1 = ip
-        if ":" not in ip1:
-            ip1 = ip1.strip() + ":80"
-            Tnum.endpoint = ip1
+    def authorize(ip="dev.truenumbers.com:8080"):
+        
+        Tnum.endpoint = ip.strip()
 
         # get list of numberspaces
-        result = requests.get(f"http://{ip1}/v2/numberflow/numberspace")
+        result = requests.get(f"http://{Tnum.endpoint}/v2/numberflow/numberspace")
         payload = result.json()
         if "code" in payload:
             print(payload["code"])
@@ -74,6 +85,7 @@ class Tnum(object):
             print("Creating " + name + " " + result["code"])
         else:
             print("Created " + name)
+            Tnum.authorize(Tnum.endpoint)
 
     @staticmethod
     def setSpace(name="testspace"):
@@ -116,7 +128,7 @@ class Tnum(object):
     ###
 
     @staticmethod
-    def decodenumber(tn):
+    def decodeNumber(tn):
         subj = tn['subject']
         prop = tn['property']
         taglist = []
@@ -172,14 +184,14 @@ class Tnum(object):
 
         if 'truenumbers' not in result['truenumbers']:
             for tn in result['truenumbers']:
-                retList.append(Tnum.decodenumber(tn))
+                retList.append(Tnum.decodeNumber(tn))
 
         else:
             count = max
             for tnList in result['truenumbers']:
                 tnGroup = tnList['truenumbers']
                 for tn in tnGroup:
-                    retList.append(Tnum.decodenumber(tn))
+                    retList.append(Tnum.decodeNumber(tn))
                     count -= 1
                     if count == 0:
                         break
@@ -192,7 +204,7 @@ class Tnum(object):
 
     # Delete tnums specified by a query
     @staticmethod
-    def delete_by_query(query=""):
+    def deleteByQuery(query=""):
         args = {
             "numberspace": Tnum.nspace
         }
@@ -217,7 +229,7 @@ class Tnum(object):
 
     # Tag tnums specified by a query
     @staticmethod
-    def tag_by_query(query="", adds=[], removes=[]):
+    def tagByQuery(query="", adds=[], removes=[]):
         args = {
             "numberspace": Tnum.nspace
         }
@@ -248,7 +260,7 @@ class Tnum(object):
 
     # Utility to get attr from list
     @staticmethod
-    def get_attr_from_list(obs, attname, rval=None):
+    def getAttrFromList(obs, attname, rval=None):
         ll = []
         for i in range(len(obs)):
             atv = obs[i].get(attname)
@@ -261,7 +273,7 @@ class Tnum(object):
 
     # Make data frame from list of tnum objects
     @staticmethod
-    def objects_to_df(objs):
+    def objectsToDf(objs):
         len_objs = len(objs)
         subj = get_attr_from_list(objs, "subject", None)
         prop = get_attr_from_list(objs, "property", None)
@@ -302,7 +314,7 @@ class Tnum(object):
         return df
 
     @staticmethod
-    def date_as_token():
+    def dateAsToken():
         dt = datetime.date.today().strftime("%Y-%m-%d %H-%M-%S")
         dt = dt.replace(" ", "_").replace(":", "-")
         return dt
@@ -314,14 +326,14 @@ class Tnum(object):
     import requests
 
     @staticmethod
-    def not_real_string(string):
+    def notRealString(string):
         if re.search(r"[0-9,a-z%]+", string, re.IGNORECASE):
             return False
         else:
             return True
 
     @staticmethod
-    def make_tnum_json(subject="something", property="property", value=None,
+    def makeTnumJson(subject="something", property="property", value=None,
                             numeric_error=None, unit="", tags=None, no_empty_strings=False):
         if tags is None:
             tags = []
@@ -358,7 +370,7 @@ class Tnum(object):
         return thenumber
 
     @staticmethod
-    def post_from_lists(subject, property, value=None, numeric_error=None, unit=None,
+    def postFromLists(subject, property, value=None, numeric_error=None, unit=None,
                              tags=None, no_empty_strings=False):
         len_subject = len(subject)
         len_property = len(property)
@@ -413,27 +425,28 @@ class Tnum(object):
         print(f"posted {numnums} tnums")
 
     @staticmethod
-    def post_statement(sentence, tags=None):
+    def postStatement(sentence, tags=None):
         if tags is None:
             tags = []
 
-        payload = json.dumps({
+        payload = {
             "noReturn": True,
             "skipStore": False,
-            "truespeak": sentence,
+            "trueStatement": f"{sentence}",
             "tags": tags
-        })
+        }
+        
+        pars = dict(numberspace = f"{Tnum.nspace}")
 
-        args = {"numberspace": Tnum.nspace}
         response = requests.post(
-            f"http://{tnum_env['tnum_var.ip']}/v2/numberflow/numbers",
+            f"http://{Tnum.endpoint}/v2/numberflow/numbers",
             json=payload,
-            params=args,
-            headers={"Accept": "application/json", "Content-Type": "application/json"}
+            params=pars
+            #headers={"Accept": "application/json", "Content-Type": "application/json"}
         )
 
     @staticmethod
-    def post_objects(objects):
+    def postObjects(objects):
         if not isinstance(objects, (list, tuple)):
             objects = [objects]
 
@@ -446,7 +459,7 @@ class Tnum(object):
         post_from_lists(subject, property, objects, error, unit, tags)
 
     @staticmethod
-    def make_numeric_vector_string(numvec):
+    def makeNumericVectorString(numvec):
         if isinstance(numvec, list):
             nvec = numvec
         else:
@@ -456,7 +469,7 @@ class Tnum(object):
         return vvals
 
     @staticmethod
-    def decode_numeric_vector_string(nvs):
+    def decodeNumericVector_string(nvs):
         if nvs.startswith('"vector('):
             csl = nvs[8:-2]
             Nvec = [float(n) for n in csl.split(",")]
